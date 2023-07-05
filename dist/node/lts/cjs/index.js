@@ -94,12 +94,13 @@ class DateVersion {
 class SemanticVersion {
   static tags = ['MAJOR', 'MINOR', 'PATCH'];
   reDigits = /[^0-9]/;
-  constructor(obj, parentSeperator, isInitialVersion) {
+  constructor(obj, parentSeperator, isInitialVersion, startFrom) {
     this.MAJOR = null;
     this.MINOR = null;
     this.PATCH = null;
     this.isInitialVersion = isInitialVersion;
     this.parentSeperator = parentSeperator;
+    this.startFrom = startFrom;
     this.props = [];
     this.parse(obj);
   }
@@ -113,7 +114,7 @@ class SemanticVersion {
     }
   }
   reset() {
-    this.props.map(prop => this[prop] = 0);
+    this.props.map(prop => this[prop] = this.startFrom);
   }
   inc(level) {
     if (this.props.indexOf(level) === -1) {
@@ -121,12 +122,12 @@ class SemanticVersion {
     }
     if (level == 'MAJOR') {
       this.MAJOR = (parseInt(this.MAJOR) + 1).toString();
-      if (this.props.indexOf('MINOR') !== -1) this.MINOR = '0';
-      if (this.props.indexOf('PATCH') !== -1) this.PATCH = '0';
+      if (this.props.indexOf('MINOR') !== -1) this.MINOR = this.startFrom.toString();
+      if (this.props.indexOf('PATCH') !== -1) this.PATCH = this.startFrom.toString();
     }
     if (level == 'MINOR') {
       this.MINOR = (parseInt(this.MINOR) + 1).toString();
-      if (this.props.indexOf('PATCH') !== -1) this.PATCH = '0';
+      if (this.props.indexOf('PATCH') !== -1) this.PATCH = this.startFrom.toString();
     }
     if (level == 'PATCH') {
       this.PATCH = (parseInt(this.PATCH) + 1).toString();
@@ -156,13 +157,14 @@ class ModifierVersion {
   static seperator = '-';
   static tags = ['DEV', 'ALPHA', 'BETA', 'RC'];
   reDigits = /[^0-9\-]/;
-  constructor(obj, parentSeperator, isInitialVersion) {
+  constructor(obj, parentSeperator, isInitialVersion, startFrom) {
     this.DEV = null;
     this.ALPHA = null;
     this.BETA = null;
     this.RC = null;
     this.isInitialVersion = isInitialVersion;
     this.parentSeperator = parentSeperator;
+    this.startFrom = startFrom;
     this.prop = null;
     this.parse(obj);
   }
@@ -248,8 +250,9 @@ class LocalDate {
 }
 
 class Version {
-  constructor(version, seperator, date) {
+  constructor(version, seperator, date, startFrom) {
     this.seperator = seperator;
+    this.startFrom = startFrom;
     this.versionStringHasModifier = version.versionStringHasModifier;
     this.isInitialVersion = version.isInitialVersion;
     this.isCalendarLeading = version.isCalendarLeading;
@@ -264,10 +267,10 @@ class Version {
       this.datever = new DateVersion(version.calendar, this.seperator, this.isInitialVersion, this.date);
     }
     if (Object.keys(version.semantic).length > 0) {
-      this.semanticver = new SemanticVersion(version.semantic, this.seperator, this.isInitialVersion);
+      this.semanticver = new SemanticVersion(version.semantic, this.seperator, this.isInitialVersion, this.startFrom);
     }
     if (Object.keys(version.modifier).length > 0) {
-      this.modifierver = new ModifierVersion(version.modifier, this.seperator, this.isInitialVersion);
+      this.modifierver = new ModifierVersion(version.modifier, this.seperator, this.isInitialVersion, this.startFrom);
     }
   }
   inc(levels) {
@@ -331,14 +334,14 @@ class Calver {
   constructor() {
     this.seperator = '.';
     this.levels = ['CALENDAR', 'MAJOR', 'MINOR', 'PATCH', ...ModifierVersion.tags];
-    this._useLocalTime = false;
+    this._useLocalTime = false, this.startFrom = 0;
   }
   inc(format, version, levels) {
     levels = this.validateLevels(levels);
     format = this.validateFormat(format, levels);
-    const parsedVersion = this.parseVersion(version, format, levels);
+    const parsedVersion = this.parseVersion(version, format, levels, this.startFrom);
     const date = this._useLocalTime ? new LocalDate() : new UtcDate();
-    const obj = new Version(parsedVersion, this.seperator, date).inc(levels).asObject();
+    const obj = new Version(parsedVersion, this.seperator, date, this.startFrom).inc(levels).asObject();
     const result = this.asString(format, obj);
     if (version == result) {
       throw new Error('No change happened in the version.');
@@ -399,7 +402,7 @@ class Calver {
         value = version.slice(startIndex, endIndex);
       }
       if (ModifierVersion.tags.indexOf(value.toUpperCase()) !== -1) {
-        if (value.toUpperCase() != tag) value = '-1';else value = version.slice(startIndex + value.length + 1);
+        if (value.toUpperCase() != tag) value = (this.startFrom - 1).toString();else value = version.slice(startIndex + value.length + 1);
       }
       if (isNaN(startIndex)) {
         value = ModifierVersion.tags.indexOf(tag) !== -1 ? '-1' : '0';
