@@ -3,7 +3,7 @@
   "versioningFormat": "yy.mm.minor",
   "versioningPrefix": "v",
   "npmUpdatePackageVersion": true,
-  "npmPublishPackage": true,
+  "npmPublishPackage": false,
   "githubRelease": true,
   "location": ".releaser.json",
   "npmPublishPackageArgs": [],
