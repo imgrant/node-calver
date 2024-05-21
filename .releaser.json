@@ -1,6 +1,5 @@
 {
-  "versioningScheme": "calver",
-  "versioningFormat": "yy.mm.minor",
+  "versioningScheme": "semver",
   "versioningPrefix": "v",
   "npmUpdatePackageVersion": true,
   "npmPublishPackage": false,
