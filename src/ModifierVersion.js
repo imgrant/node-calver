@@ -34,7 +34,8 @@ export default class ModifierVersion {
       throw new Error(`[CALVER]: You have requested to increment "${level}" but your format doesn't have it.`)
     }
 
-    this[this.prop] = (parseInt(this[this.prop]) + 1).toString()
+    if (parseInt(this[this.prop]) === -1) this[this.prop] = this.startFrom.toString()
+    else this[this.prop] = (parseInt(this[this.prop]) + 1).toString()
 
     return this
   }
